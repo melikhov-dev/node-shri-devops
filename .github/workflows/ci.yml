@@ -22,4 +22,46 @@ jobs:
             - name: Install packages
               run: npm ci
             - name: Lint
-              run: npm run lint  
+              run: npm run lint
+    deploy:
+        name: Deploy
+        needs: verify
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: .
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+              with:
+                fetch-depth: 0
+            - name: Setup node
+              uses: actions/setup-node@v3
+              with:
+                node-version: '18.x'
+             # Setup key
+            - name: Setup key
+              run: |
+                set -eu
+                mkdir "$HOME/.ssh"
+                echo "${{ secrets.ID_RSA }}" > "$HOME/.ssh/key"
+                chmod 600 "$HOME/.ssh/key"
+            - name: Build
+              run: docker build -t nodevops:latest
+              
+            - name: Save docker image to file
+              run: docker save nodevops:latest > nodevops.tar  
+
+            - name: Copy files
+              run: scp -i $HOME/.ssh/key -o StrictHostKeyChecking=no nodevops.tar docker-compose.yml .env andrey@158.160.102.162:~
+    
+            - name: Deploy configs
+              run: rsync -e "ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no" --archive --compress --delete ./deploy andrey@158.160.102.162:~
+            
+            - name: load docker image
+              run: ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no andrey@158.160.102.162 'sudo docker load < ~/nodevops.tar'
+            
+            - name: docker restart
+              run: |
+                ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no andrey@158.160.102.162 'sudo docker-compose up --build --force-recreate --no-deps -d'
+        
