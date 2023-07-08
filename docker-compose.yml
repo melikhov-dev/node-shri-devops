@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  nginx: 
+    image: nginx
+    container_name: nginx
+    depends_on:
+      - node
+    command: [nginx-debug, '-g', 'daemon off;']
+    volumes:
+      - ./deploy/nginx:/etc/nginx/conf.d/
+    ports:
+      - 80:80
+  node: 
+    image: nodevops:latest
+    container_name: node
+    depends_on:
+      - postgres
+    env_file:
+      - ./.env
+    restart: always
+    ports:
+      - 3000:3000
+  postgres:
+    image: postgres
+    container_name: db
+    env_file:
+      - ./.env
+    volumes:
+      - ./deploy/db:/docker-entrypoint-initdb.d
+      - ./demodb-data:/var/lib/postgresql/data 
