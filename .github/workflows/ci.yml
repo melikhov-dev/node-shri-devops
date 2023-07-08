@@ -47,7 +47,7 @@ jobs:
                 echo "${{ secrets.ID_RSA }}" > "$HOME/.ssh/key"
                 chmod 600 "$HOME/.ssh/key"
             - name: Build
-              run: docker build -t nodevops:latest
+              run: docker build -t nodevops:latest .
               
             - name: Save docker image to file
               run: docker save nodevops:latest > nodevops.tar  
