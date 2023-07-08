@@ -8,3 +8,5 @@ services:
     volumes:
       - ./deploy/db:/docker-entrypoint-initdb.d
       - ./demodb-data:/var/lib/postgresql/data 
+    ports:
+      - 5432:5432
